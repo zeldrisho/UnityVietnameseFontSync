@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+*.user
+*.suo
+Directory.Build.props
+artifacts/
+__pycache__/
+*.pyc

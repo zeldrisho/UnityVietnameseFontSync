@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/UnityVietnameseFontSync.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UnityVietnameseFontSync.Tests.csproj" />
+  </Folder>
+</Solution>
