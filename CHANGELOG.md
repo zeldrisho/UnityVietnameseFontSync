@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-15
+
 ### Added
 
 - Vietnamese glyph fallback for supported Unity Mono games using TextMeshPro.

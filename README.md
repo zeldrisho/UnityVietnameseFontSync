@@ -24,7 +24,7 @@ This plugin does not translate text. It can work alongside XUnity.AutoTranslator
 ## Installation
 
 1. Install [BepInEx 5 for Unity Mono](https://docs.bepinex.dev/articles/user_guide/installation/index.html).
-2. Extract the release archive into `<Game>/BepInEx/`, or [build from source](docs/development.md) and place the DLL at:
+2. Extract the release archive into `<Game>/BepInEx/`. The plugin DLL should be at:
    ```text
    <Game>/BepInEx/plugins/zeldrisho.UnityVietnameseFontSync/UnityVietnameseFontSync.dll
    ```
@@ -111,12 +111,6 @@ Keep translation enabled. This plugin neither edits XUnity configuration nor rew
 `HideManagerGameObject` is a BepInEx setting, not a plugin setting; do not add it to this plugin's config. It hides BepInEx's manager object from scene discovery to help protect it from game cleanup. It affects all plugins on that manager and is not required in every game. Keep it enabled in installations where it restores ongoing scanning.
 
 To disable, set `Enabled = false` and restart. To uninstall, close the game and remove the plugin DLL.
-
-## Development
-
-See [development](docs/development.md) for build/test commands, runtime design, and release steps. Notable changes are recorded in [CHANGELOG.md](CHANGELOG.md).
-
-CI checks formatting, locked restore, compilation, tests, and packaging logic. A matching version tag publishes the release ZIP after those checks pass.
 
 ## License
 
