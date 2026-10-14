@@ -7,6 +7,9 @@ using Xunit;
 
 public sealed class ConfigurationTests
 {
+    /// <summary>
+    /// Verifies rule order, case-insensitive exact matches, exclusions, and the absence of matches.
+    /// </summary>
     [Fact]
     public void RulesUseFirstMatchAndExclusionsWin()
     {
@@ -18,6 +21,9 @@ public sealed class ConfigurationTests
         Assert.Null(FontRules.Select("Body", new FontRule[0], new string[0]));
     }
 
+    /// <summary>
+    /// Verifies case-insensitive fragment matching and rejection of empty patterns.
+    /// </summary>
     [Fact]
     public void ContainsIsCaseInsensitiveAndEmptyNeverMatches()
     {
@@ -25,6 +31,9 @@ public sealed class ConfigurationTests
         Assert.False(new FontRule { Match = MatchKind.Contains, Pattern = "" }.Matches("BODY"));
     }
 
+    /// <summary>
+    /// Verifies Vietnamese coverage, custom Unicode scalars, deduplication, and rejection of unpaired surrogates.
+    /// </summary>
     [Fact]
     public void CharacterPresetIncludesVietnameseUpperLowerAndScalars()
     {
@@ -40,6 +49,9 @@ public sealed class ConfigurationTests
         Assert.Throws<ArgumentException>(() => FontRules.Characters("\uD800"));
     }
 
+    /// <summary>
+    /// Verifies custom-directory precedence, system-directory fallback, absolute paths, and empty input.
+    /// </summary>
     [Fact]
     public void RelativePathsPreferCustomFiles()
     {
@@ -57,12 +69,18 @@ public sealed class ConfigurationTests
         finally { Directory.Delete(directory, true); }
     }
 
+    /// <summary>
+    /// Verifies that list parsing trims entries and preserves their first occurrence.
+    /// </summary>
     [Fact]
     public void ListParsingTrimsAndDeduplicates()
     {
         Assert.Equal(new[] { "body", "menu" }, FontRules.Split(" body, ,menu,body "));
     }
 
+    /// <summary>
+    /// Verifies that default settings contain no rules and no enabled primary font file.
+    /// </summary>
     [Fact]
     public void DefaultsNeverMutateFonts()
     {
@@ -71,6 +89,9 @@ public sealed class ConfigurationTests
         Assert.Equal("", settings.Profiles[0].File);
     }
 
+    /// <summary>
+    /// Verifies that invalid IDs, atlas sizes, profile references, and empty rule patterns are rejected.
+    /// </summary>
     [Theory]
     [InlineData("[Fonts]\nProfiles = invalid.id\n")]
     [InlineData("[Fonts]\nProfiles = default\n[Font.default]\nAtlasSize = 513\n")]
@@ -81,6 +102,9 @@ public sealed class ConfigurationTests
         Assert.Throws<ArgumentException>(() => Load(text));
     }
 
+    /// <summary>
+    /// Verifies that configured rule order and synchronization mode are retained.
+    /// </summary>
     [Fact]
     public void ConfigurationPreservesExplicitOrder()
     {
@@ -89,6 +113,9 @@ public sealed class ConfigurationTests
         Assert.Equal(PatchMode.Synchronize, settings.Rules[1].Mode);
     }
 
+    /// <summary>
+    /// Verifies that fallback files default to empty and preserve configured order after deduplication.
+    /// </summary>
     [Fact]
     public void ProfileFallbackFilesPreserveOrderAndDefaultToEmpty()
     {
@@ -98,6 +125,9 @@ public sealed class ConfigurationTests
         Assert.Equal(new[] { "Secondary.ttf", "Third.ttf" }, settings.Profiles[0].FallbackFiles);
     }
 
+    /// <summary>
+    /// Verifies that incomplete coverage persists until success and invalid missing-character reports are rejected.
+    /// </summary>
     [Fact]
     public void CoverageChainRequiresAllRemainingCharacters()
     {
@@ -111,6 +141,9 @@ public sealed class ConfigurationTests
         Assert.Throws<InvalidOperationException>(() => FontRules.RemainingCharacters(requested, false, new uint[] { 999 }));
     }
 
+    /// <summary>
+    /// Loads settings from a temporary configuration file with automatic saving disabled, then deletes the file.
+    /// </summary>
     private static PluginSettings Load(string text)
     {
         string file = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".cfg");

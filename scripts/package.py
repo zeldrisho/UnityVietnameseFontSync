@@ -14,6 +14,7 @@ PROJECT = "UnityVietnameseFontSync"
 
 
 def release_notes(changelog, version):
+    """Return notes for a dated release with at least one change entry, or raise ValueError."""
     match = re.search(
         rf"^## \[{re.escape(version)}\] - (\d{{4}}-\d{{2}}-\d{{2}})\s*\n(.*?)(?=^## |\Z)",
         changelog,
@@ -29,6 +30,7 @@ def release_notes(changelog, version):
 
 
 def package(root, tag, dll, output, repository_url=None):
+    """Validate release metadata and inputs, write an allowlisted deterministic ZIP and notes, and return the archive path."""
     if not re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag):
         raise ValueError("Use a stable SemVer tag such as v1.0.0.")
     version = tag[1:]
@@ -61,6 +63,7 @@ def package(root, tag, dll, output, repository_url=None):
             if source == root / "README.md":
                 # Guides stay in the repository, not the install archive. Avoid broken local links.
                 def documentation_link(match):
+                    """Convert a guide link to the release-tag URL, or to plain text when no repository URL is available."""
                     label, path = match.groups()
                     if repository_url:
                         return f"[{label}]({repository_url.rstrip('/')}/blob/{tag}/{path})"
@@ -73,6 +76,7 @@ def package(root, tag, dll, output, repository_url=None):
 
 
 def main():
+    """Parse release arguments, package the inputs, and report validation errors with a failing exit status."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tag", required=True)
     parser.add_argument("--dll", type=Path, required=True)

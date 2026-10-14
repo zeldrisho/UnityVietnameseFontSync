@@ -15,6 +15,9 @@ namespace UnityVietnameseFontSync
         public string Pattern;
         public MatchKind Match;
         public PatchMode Mode;
+        /// <summary>
+        /// Tests the asset name using the configured case-insensitive match kind.
+        /// </summary>
         public bool Matches(string name)
         {
             if (Match == MatchKind.All) return true;
@@ -27,6 +30,9 @@ namespace UnityVietnameseFontSync
 
     public static class FontRules
     {
+        /// <summary>
+        /// Trims a comma-separated list, omits empty entries, and preserves the first occurrence of each value.
+        /// </summary>
         public static string[] Split(string value)
         {
             var result = new List<string>();
@@ -35,6 +41,9 @@ namespace UnityVietnameseFontSync
             return result.ToArray();
         }
 
+        /// <summary>
+        /// Returns the first matching rule, or null when the name is excluded or no rule matches.
+        /// </summary>
         public static FontRule Select(string name, IEnumerable<FontRule> rules, string[] exclusions)
         {
             foreach (string exclusion in exclusions)
@@ -43,6 +52,9 @@ namespace UnityVietnameseFontSync
             return null;
         }
 
+        /// <summary>
+        /// Returns an absolute path unchanged, otherwise prefers an existing custom font before the system font directory.
+        /// </summary>
         public static string ResolvePath(string file, string fontsDirectory, string customDirectory)
         {
             if (string.IsNullOrWhiteSpace(file)) return null;
@@ -52,6 +64,9 @@ namespace UnityVietnameseFontSync
             return Path.Combine(fontsDirectory, file);
         }
 
+        /// <summary>
+        /// Returns sorted, unique missing codes; rejects failed population results whose coverage cannot be verified.
+        /// </summary>
         public static uint[] RemainingCharacters(uint[] requested, bool complete, uint[] missing)
         {
             if (complete) return new uint[0];
@@ -70,6 +85,9 @@ namespace UnityVietnameseFontSync
             return result;
         }
 
+        /// <summary>
+        /// Returns sorted, unique Unicode scalars for printable ASCII, precomposed Vietnamese, and custom characters; rejects unpaired surrogates.
+        /// </summary>
         public static uint[] Characters(string extra)
         {
             var text = new StringBuilder();

@@ -22,6 +22,9 @@ namespace UnityVietnameseFontSync
         private float _nextScan;
         private bool _ready, _assetsInstalled, _apiWarningLogged, _firstFontScanLogged;
 
+        /// <summary>
+        /// Loads configuration and initializes scanning, logging configuration failures without propagating them.
+        /// </summary>
         private void Awake()
         {
             Logger.LogInfo("Awake entered; loading configuration.");
@@ -35,12 +38,18 @@ namespace UnityVietnameseFontSync
             catch (Exception ex) { Logger.LogError("Invalid configuration; no fonts will be changed: " + ex); }
         }
 
+        /// <summary>
+        /// Retries runtime initialization after Unity startup.
+        /// </summary>
         private void Start()
         {
             Logger.LogInfo("Start entered.");
             InitializeRuntime();
         }
 
+        /// <summary>
+        /// Subscribes to scene loads and performs an initial scan once valid, enabled settings are available.
+        /// </summary>
         private void InitializeRuntime()
         {
             if (_ready) return;
@@ -60,14 +69,23 @@ namespace UnityVietnameseFontSync
             Scan();
         }
 
+        /// <summary>
+        /// Runs a discovery scan when the configured periodic interval has elapsed.
+        /// </summary>
         private void Update()
         {
             if (!_ready || _settings.ScanInterval <= 0 || Time.unscaledTime < _nextScan) return;
             Scan();
         }
 
+        /// <summary>
+        /// Scans for newly loaded font assets after a scene load.
+        /// </summary>
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode) { Scan(); }
 
+        /// <summary>
+        /// Builds a profile with complete glyph coverage, skips an empty primary file, and destroys newly owned assets on failure.
+        /// </summary>
         private void Build(FontProfile profile)
         {
             string directory = Path.Combine(Path.GetDirectoryName(Info.Location), "Fonts");
@@ -117,12 +135,18 @@ namespace UnityVietnameseFontSync
             }
         }
 
+        /// <summary>
+        /// Tracks and pins the font asset current atlas textures.
+        /// </summary>
         private void OwnTextures(Object font)
         {
             IEnumerable textures = _tmp.Textures(font);
             if (textures != null) foreach (object texture in textures) Own(texture as Object);
         }
 
+        /// <summary>
+        /// Pins a non-null asset against unused-asset unloading and tracks it once.
+        /// </summary>
         private void Own(Object value)
         {
             if (value == null || _owned.Contains(value)) return;
@@ -130,6 +154,9 @@ namespace UnityVietnameseFontSync
             _owned.Add(value);
         }
 
+        /// <summary>
+        /// Discovers TMP and profiles, patches matching live fonts with rollback and retry handling, and refreshes directly affected text.
+        /// </summary>
         private void Scan()
         {
             if (!_ready) return;
@@ -233,6 +260,9 @@ namespace UnityVietnameseFontSync
             }
         }
 
+        /// <summary>
+        /// Unsubscribes from scene loads, attempts to restore patched fonts, and destroys generated assets only when none were installed and restoration succeeded.
+        /// </summary>
         private void OnDestroy()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
@@ -256,12 +286,18 @@ namespace UnityVietnameseFontSync
         {
             private readonly object _mode;
             private readonly object[] _characters, _fallbacks;
+            /// <summary>
+            /// Saves the original atlas mode and fallbacks, optionally copying characters for synchronization rollback.
+            /// </summary>
             public Snapshot(TmpRuntime tmp, Object font, bool saveCharacters)
             {
                 _mode = tmp.Mode(font);
                 _characters = saveCharacters ? Copy(tmp.Characters(font)) : null;
                 _fallbacks = Copy(tmp.Fallbacks(font));
             }
+            /// <summary>
+            /// Restores saved font state and rebuilds its definition; native failures propagate to the caller.
+            /// </summary>
             public void Restore(TmpRuntime tmp, Object font)
             {
                 tmp.SetMode(font, _mode);
@@ -280,6 +316,9 @@ namespace UnityVietnameseFontSync
                 tmp.SetFallbacks(font, fallbacks);
                 tmp.ReadDefinition(font);
             }
+            /// <summary>
+            /// Copies list entries into an array, preserving a null list as null.
+            /// </summary>
             private static object[] Copy(IList values)
             {
                 if (values == null) return null;

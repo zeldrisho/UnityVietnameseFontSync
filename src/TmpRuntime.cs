@@ -14,6 +14,9 @@ namespace UnityVietnameseFontSync
         private readonly PropertyInfo _characters, _fallbacks, _mode, _textures, _textFont;
         private readonly MemberInfo _material;
 
+        /// <summary>
+        /// Validates the reflected TMP API and enum values before allowing font creation or mutation.
+        /// </summary>
         public TmpRuntime(Type fontType, Type textType, Type unityFontType)
         {
             FontType = fontType;
@@ -46,6 +49,9 @@ namespace UnityVietnameseFontSync
             Enum.Parse(_create.GetParameters()[3].ParameterType, "SDFAA");
         }
 
+        /// <summary>
+        /// Finds TMP font and text types in a loaded assembly, or throws when no supported API is available.
+        /// </summary>
         public static TmpRuntime Discover(Type unityFontType)
         {
             foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -57,6 +63,9 @@ namespace UnityVietnameseFontSync
             throw new NotSupportedException("No loaded TMP_FontAsset/TMP_Text API found. Legacy UI and IL2CPP are not supported.");
         }
 
+        /// <summary>
+        /// Creates a dynamic SDF font with a square atlas, using declared defaults for optional trailing parameters.
+        /// </summary>
         public object Create(object source, int size, int padding, int atlas, bool multiAtlas)
         {
             var parameters = _create.GetParameters();
@@ -68,6 +77,9 @@ namespace UnityVietnameseFontSync
             return _create.Invoke(null, arguments);
         }
 
+        /// <summary>
+        /// Attempts to populate glyphs and returns the TMP completion result and missing character codes.
+        /// </summary>
         public bool AddCharacters(object font, uint[] codes, out uint[] missing)
         {
             object[] arguments = { codes, null, false };
@@ -76,24 +88,63 @@ namespace UnityVietnameseFontSync
             return complete;
         }
 
+        /// <summary>
+        /// Returns the mutable character table of the reflected font asset.
+        /// </summary>
         public IList Characters(object font) => (IList)_characters.GetValue(font, null);
+        /// <summary>
+        /// Returns the font asset fallback list, which may be null.
+        /// </summary>
         public IList Fallbacks(object font) => (IList)_fallbacks.GetValue(font, null);
+        /// <summary>
+        /// Assigns the font asset fallback list, including a null list when restoring original state.
+        /// </summary>
         public void SetFallbacks(object font, IList value) => _fallbacks.SetValue(font, value, null);
+        /// <summary>
+        /// Creates an empty list of the type required by the TMP fallback property.
+        /// </summary>
         public IList NewFallbacks() => (IList)Activator.CreateInstance(_fallbacks.PropertyType);
+        /// <summary>
+        /// Returns the font asset atlas population mode.
+        /// </summary>
         public object Mode(object font) => _mode.GetValue(font, null);
+        /// <summary>
+        /// Assigns the font asset atlas population mode.
+        /// </summary>
         public void SetMode(object font, object mode) => _mode.SetValue(font, mode, null);
+        /// <summary>
+        /// Sets the font asset atlas population mode to Static.
+        /// </summary>
         public void Freeze(object font) => SetMode(font, Enum.Parse(_mode.PropertyType, "Static"));
+        /// <summary>
+        /// Returns the atlas textures currently associated with the font asset.
+        /// </summary>
         public IEnumerable Textures(object font) => (IEnumerable)_textures.GetValue(font, null);
+        /// <summary>
+        /// Reads the font material through the available reflected property or field.
+        /// </summary>
         public object Material(object font) => _material is PropertyInfo property
             ? property.GetValue(font, null) : ((FieldInfo)_material).GetValue(font);
+        /// <summary>
+        /// Returns the text component primary font asset.
+        /// </summary>
         public object TextFont(object text) => _textFont.GetValue(text, null);
+        /// <summary>
+        /// Rebuilds the font asset definition after its tables change.
+        /// </summary>
         public void ReadDefinition(object font) => _readDefinition.Invoke(font, null);
+        /// <summary>
+        /// Marks text dirty and forces a mesh update with inactive objects and reparsing enabled.
+        /// </summary>
         public void Refresh(object text)
         {
             _dirty.Invoke(text, null);
             _refresh.Invoke(text, new object[] { true, true });
         }
 
+        /// <summary>
+        /// Returns a readable property, optionally requiring write access, or throws for an unsupported API.
+        /// </summary>
         private static PropertyInfo RequireProperty(Type type, string name, bool writable = false)
         {
             PropertyInfo property = type.GetProperty(name);
@@ -102,6 +153,9 @@ namespace UnityVietnameseFontSync
             return property;
         }
 
+        /// <summary>
+        /// Returns the method with the required parameter types, or throws when the overload is absent.
+        /// </summary>
         private static MethodInfo RequireMethod(Type type, string name, params Type[] parameters)
         {
             return type.GetMethod(name, parameters) ?? throw new NotSupportedException(type.FullName + "." + name + " has no compatible overload.");

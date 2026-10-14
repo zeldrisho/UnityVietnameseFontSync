@@ -8,6 +8,7 @@ from package import package, release_notes
 
 class PackageTests(unittest.TestCase):
     def test_notes_require_dated_nonempty_release(self):
+        """Verify dated release notes are extracted and missing, invalid, or empty entries are rejected."""
         self.assertEqual("### Added\n- Example.\n", release_notes(
             "## [1.0.0] - 2026-10-15\n\n### Added\n- Example.\n\n## [0.9.0] - 2026-09-01\n", "1.0.0"))
         for text in ("## [Unreleased]\n- Example.", "## [1.0.0] - 2026-99-99\n- Example.",
@@ -16,6 +17,7 @@ class PackageTests(unittest.TestCase):
                 release_notes(text, "1.0.0")
 
     def test_exact_layout_version_and_reproducibility(self):
+        """Verify archive contents, reproducibility, guide links, and rejection of invalid or mismatched tags."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "src").mkdir()

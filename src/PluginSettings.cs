@@ -21,6 +21,9 @@ namespace UnityVietnameseFontSync
         public float ScanInterval, RetryInterval;
         public bool Enabled, Diagnostics;
 
+        /// <summary>
+        /// Binds configuration defaults and loads ordered profiles and rules, rejecting invalid IDs, atlas sizes, modes, and rule references.
+        /// </summary>
         public PluginSettings(ConfigFile config)
         {
             Enabled = config.Bind("General", "Enabled", true, "Enable plugin. Restart after configuration changes.").Value;
@@ -65,6 +68,9 @@ namespace UnityVietnameseFontSync
             }
         }
 
+        /// <summary>
+        /// Rejects profile or rule IDs containing characters other than letters, digits, underscores, or hyphens.
+        /// </summary>
         private static void ValidateId(string id)
         {
             foreach (char c in id)
