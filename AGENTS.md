@@ -2,7 +2,7 @@
 
 ## Toolchain
 
-- Use stable .NET 10 via `global.json` and Python 3 for packaging checks.
+- Use stable .NET 10 via `global.json`, Python 3 for packaging checks, and `fd` for file discovery.
 - Restore with `dotnet restore UnityVietnameseFontSync.slnx --locked-mode`.
 - Stop and report missing development tools or dependencies.
 

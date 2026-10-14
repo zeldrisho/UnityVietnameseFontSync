@@ -20,19 +20,43 @@ namespace UnityVietnameseFontSync
         private readonly HashSet<Object> _reported = new HashSet<Object>();
         private readonly Dictionary<Object, float> _retry = new Dictionary<Object, float>();
         private float _nextScan;
-        private bool _ready, _assetsInstalled, _apiWarningLogged;
+        private bool _ready, _assetsInstalled, _apiWarningLogged, _firstFontScanLogged;
 
         private void Awake()
         {
-            try { _settings = new PluginSettings(Config); }
+            Logger.LogInfo("Awake entered; loading configuration.");
+            try
+            {
+                _settings = new PluginSettings(Config);
+                Logger.LogInfo("Configuration loaded (Enabled=" + _settings.Enabled + ", profiles=" + _settings.Profiles.Count +
+                    ", rules=" + _settings.Rules.Count + ", Diagnostics=" + _settings.Diagnostics + ").");
+                InitializeRuntime();
+            }
             catch (Exception ex) { Logger.LogError("Invalid configuration; no fonts will be changed: " + ex); }
         }
 
         private void Start()
         {
-            if (_settings == null || !_settings.Enabled) return;
+            Logger.LogInfo("Start entered.");
+            InitializeRuntime();
+        }
+
+        private void InitializeRuntime()
+        {
+            if (_ready) return;
+            if (_settings == null)
+            {
+                Logger.LogError("Configuration unavailable; plugin will not scan fonts.");
+                return;
+            }
+            if (!_settings.Enabled)
+            {
+                Logger.LogInfo("Plugin is disabled in configuration.");
+                return;
+            }
             _ready = true;
             SceneManager.sceneLoaded += OnSceneLoaded;
+            Logger.LogInfo("Runtime scanning initialized.");
             Scan();
         }
 
@@ -47,30 +71,43 @@ namespace UnityVietnameseFontSync
         private void Build(FontProfile profile)
         {
             string directory = Path.Combine(Path.GetDirectoryName(Info.Location), "Fonts");
-            string path = FontRules.ResolvePath(profile.File, Environment.GetFolderPath(Environment.SpecialFolder.Fonts), directory);
-            if (path == null) return;
-            if (!File.Exists(path)) throw new FileNotFoundException("Font file not found", path);
+            if (string.IsNullOrWhiteSpace(profile.File)) return;
+            var files = new List<string> { profile.File };
+            files.AddRange(profile.FallbackFiles);
             int start = _owned.Count;
             try
             {
-                Font source = new Font(path);
-                Own(source);
-                Object asset = (Object)_tmp.Create(source, profile.Size, profile.Padding, profile.Atlas, profile.MultiAtlas);
-                if (asset == null) throw new InvalidOperationException("TMP font creation returned null.");
-                Own(asset);
-                asset.name = MyPluginInfo.PLUGIN_GUID + "." + profile.Id;
-                Own(_tmp.Material(asset) as Object);
-                bool complete;
-                uint[] missing;
-                try { complete = _tmp.AddCharacters(asset, _settings.Characters, out missing); }
-                finally { OwnTextures(asset); }
-                if (!complete)
+                Object root = null;
+                uint[] remaining = _settings.Characters;
+                for (int i = 0; i < files.Count && remaining.Length > 0; i++)
+                {
+                    string path = FontRules.ResolvePath(files[i], Environment.GetFolderPath(Environment.SpecialFolder.Fonts), directory);
+                    if (!File.Exists(path)) throw new FileNotFoundException("Font file not found", path);
+                    Font source = new Font(path);
+                    Own(source);
+                    Object asset = (Object)_tmp.Create(source, profile.Size, profile.Padding, profile.Atlas, profile.MultiAtlas);
+                    if (asset == null) throw new InvalidOperationException("TMP font creation returned null.");
+                    Own(asset);
+                    asset.name = MyPluginInfo.PLUGIN_GUID + "." + profile.Id + (i == 0 ? "" : ".fallback" + i);
+                    Own(_tmp.Material(asset) as Object);
+                    // Only generated assets are linked. Never link back to game fonts.
+                    _tmp.SetFallbacks(asset, _tmp.NewFallbacks());
+                    if (root == null) root = asset;
+                    else _tmp.Fallbacks(root).Add(asset);
+                    bool complete;
+                    uint[] missing;
+                    try { complete = _tmp.AddCharacters(asset, remaining, out missing); }
+                    finally { OwnTextures(asset); }
+                    remaining = FontRules.RemainingCharacters(remaining, complete, missing);
+                    Logger.LogInfo("Profile '" + profile.Id + "' file '" + files[i] + "': " + remaining.Length + " required characters remain.");
+                }
+                if (remaining.Length > 0)
                 {
                     var codes = new List<string>();
-                    foreach (uint code in missing ?? new uint[0]) codes.Add("U+" + code.ToString("X4"));
+                    foreach (uint code in remaining) codes.Add("U+" + code.ToString("X4"));
                     throw new InvalidOperationException("Required glyphs could not be added: " + string.Join(", ", codes.ToArray()));
                 }
-                _profiles.Add(profile.Id, asset);
+                _profiles.Add(profile.Id, root);
                 Logger.LogInfo("Loaded profile '" + profile.Id + "' with " + _settings.Characters.Length + " required characters.");
             }
             catch
@@ -100,7 +137,11 @@ namespace UnityVietnameseFontSync
             if (_tmp == null)
             {
                 // TMP may be loaded after this plugin starts. Retry discovery, without log spam.
-                try { _tmp = TmpRuntime.Discover(typeof(Font)); }
+                try
+                {
+                    _tmp = TmpRuntime.Discover(typeof(Font));
+                    Logger.LogInfo("TMP API ready: " + _tmp.FontType.Assembly.GetName().Name + " / " + _tmp.FontType.FullName + ".");
+                }
                 catch (Exception ex)
                 {
                     if (!_apiWarningLogged) Logger.LogWarning("TMP API unavailable; no fonts changed. Discovery will retry: " + ex);
@@ -117,10 +158,18 @@ namespace UnityVietnameseFontSync
             _reported.RemoveWhere(font => font == null);
             foreach (Object font in new List<Object>(_retry.Keys)) if (font == null) _retry.Remove(font);
             // Pin atlas pages added by TMP since preflight, not just the initial pages.
-            foreach (Object profile in _profiles.Values) if (profile != null) OwnTextures(profile);
+            foreach (Object asset in new List<Object>(_owned))
+                if (asset != null && _tmp.FontType.IsInstanceOfType(asset)) OwnTextures(asset);
             if (_profiles.Count == 0 && !_settings.Diagnostics) return;
             var changed = new HashSet<Object>();
-            foreach (Object font in Resources.FindObjectsOfTypeAll(_tmp.FontType))
+            Object[] fonts = Resources.FindObjectsOfTypeAll(_tmp.FontType);
+            if (!_firstFontScanLogged)
+            {
+                Logger.LogInfo("First TMP font scan found " + fonts.Length + " font assets; profiles ready=" + _profiles.Count +
+                    ", configured rules=" + _settings.Rules.Count + ".");
+                _firstFontScanLogged = true;
+            }
+            foreach (Object font in fonts)
             {
                 if (font == null || _owned.Contains(font) || _patched.ContainsKey(font)) continue;
                 if (_settings.Diagnostics && _reported.Add(font)) Logger.LogInfo("Discovered TMP font: " + font.name);
@@ -197,7 +246,8 @@ namespace UnityVietnameseFontSync
             // Used materials can remain referenced by cached submeshes. Restart to reclaim them.
             if (restored && !_assetsInstalled)
             {
-                foreach (Object asset in _profiles.Values) if (asset != null) OwnTextures(asset);
+                foreach (Object asset in new List<Object>(_owned))
+                    if (asset != null && _tmp.FontType.IsInstanceOfType(asset)) OwnTextures(asset);
                 for (int i = _owned.Count - 1; i >= 0; i--) if (_owned[i] != null) Destroy(_owned[i]);
             }
         }

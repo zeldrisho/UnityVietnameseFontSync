@@ -12,5 +12,6 @@ and this project uses [Semantic Versioning](https://semver.org/).
 - Vietnamese glyph fallback for supported Unity Mono games using TextMeshPro.
 - Optional font synchronization to keep accented and unaccented letters visually consistent.
 - Multiple font profiles, ordered matching rules, and exclusions for fonts such as icons and symbols.
+- Ordered fallback font files within a profile, with required glyph coverage checked across the complete chain.
 - Configurable font files, atlas settings, and support for late-loaded game fonts.
 - Warnings for missing font files, unsupported TMP APIs, and characters the selected font cannot provide.

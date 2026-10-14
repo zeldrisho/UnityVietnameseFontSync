@@ -3,7 +3,7 @@
 ## Toolchain and layout
 
 - Stable .NET 10 SDK, Git, and Python 3 for release packaging/tests.
-- `global.json` accepts installed stable .NET 10 SDK feature bands; CI pins SDK 10.0.402, the latest stable .NET 10 SDK reported when configured. Local checks used 10.0.112.
+- `global.json` accepts installed stable .NET 10 SDK feature bands; CI pins SDK 10.0.112 to match the locally validated toolchain.
 - `src/`: the plugin project; `tests/`: Unity-independent tests; `scripts/`: release packaging.
 - Public compile-time packages and lock files make clean builds independent of game installations. Never commit or distribute game assemblies or proprietary fonts.
 
@@ -50,11 +50,11 @@ Generated assets/pages are pinned. Best-effort restoration runs at plugin destru
 
 The working starting point was C# run inside UnityExplorer, not an installed version of this plugin or an existing plugin configuration:
 
-- In Bō (Unity 2022.3.0f1, Mono), user-reported menu/settings success used Palatino Linotype Bold (`palab.ttf`) for `MortyOld` and Bahnschrift (`bahnschrift.ttf`) for `Feruka`, with sampling size 36, padding 4, 2048-square dynamic replacement atlases, and ASCII/Vietnamese preloading.
-- The successful synchronization approach froze matched original assets to Static, cleared their character tables, rebuilt lookup data, and used replacement fallbacks. The plugin implements that approach through explicit rules while preserving original fallback chains.
+- User-reported menu/settings tests in Unity Mono used separate serif and sans-serif replacement profiles, sampling size 36, padding 4, 2048-square dynamic atlases, and ASCII/Vietnamese preloading. These manual results do not establish plugin runtime support.
+- The manual synchronization approach froze matched original assets to Static, cleared their character tables and fallback lists, and assigned replacement fallbacks. The plugin offers narrow explicit Synchronize rules but deliberately preserves existing fallback chains and leaves unmatched fonts unchanged.
 - Missing glyphs and visually incorrect existing glyphs are different problems. Removing only lookup entries did not resolve the manual failure; a dynamic original font could add glyphs again. A fallback alone also mixed accented/unaccented styles.
-- A tested Trebuchet replacement produced missing-character boxes. That observation is not a universal coverage claim about every font release; preflight each actual file. Never assume an atlas size guarantees sufficient capacity.
-- Feather's Edge (Unity 6000.0.49f1, Mono) already logged successful XUnity fallback creation; style consistency remains a separate use case. No complete replacement mapping or new-plugin rendering result has been verified there.
+- A tested replacement font produced missing-character boxes. That observation is not a universal coverage claim about every font release; preflight each actual file. Never assume an atlas size guarantees sufficient capacity.
+- Other Unity Mono testing logged successful XUnity fallback creation, but no complete replacement mapping or new-plugin rendering result has been verified in that environment.
 - TMP package versions cannot be established from those logs alone. Original metrics/material behavior, all font names, gameplay screens beyond the reported menus, long-term XUnity interactions, and performance remain unverified. Do not carry forward speculative explanations or claims of perfect shader preservation.
 
 A texture PNG alone is not a portable TMP font asset: glyph mappings, metrics, and other font data are also required. Runtime-generated fonts are not exported by this plugin. Restarting clears manual in-memory changes; disable startup scripts before testing the plugin independently.

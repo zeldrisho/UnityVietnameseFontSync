@@ -7,6 +7,7 @@ namespace UnityVietnameseFontSync
     internal sealed class FontProfile
     {
         public string Id, File;
+        public string[] FallbackFiles;
         public int Size, Padding, Atlas;
         public bool MultiAtlas;
     }
@@ -36,6 +37,7 @@ namespace UnityVietnameseFontSync
                 {
                     Id = id,
                     File = config.Bind(section, "File", "", "Font filename or absolute path. Empty disables this profile. Relative paths search plugin Fonts then Windows Fonts.").Value,
+                    FallbackFiles = FontRules.Split(config.Bind(section, "FallbackFiles", "", "Ordered comma-separated font files used for glyphs missing from File. Full combined coverage is required.").Value),
                     Size = config.Bind(section, "SamplingSize", 36, new ConfigDescription("Font sampling size.", new AcceptableValueRange<int>(8, 128))).Value,
                     Padding = config.Bind(section, "Padding", 4, new ConfigDescription("SDF padding.", new AcceptableValueRange<int>(1, 32))).Value,
                     Atlas = config.Bind(section, "AtlasSize", 2048, "Square atlas size: 256, 512, 1024, 2048, or 4096.").Value,

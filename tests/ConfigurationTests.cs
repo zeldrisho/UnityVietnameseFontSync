@@ -89,6 +89,28 @@ public sealed class ConfigurationTests
         Assert.Equal(PatchMode.Synchronize, settings.Rules[1].Mode);
     }
 
+    [Fact]
+    public void ProfileFallbackFilesPreserveOrderAndDefaultToEmpty()
+    {
+        Assert.Empty(Load("").Profiles[0].FallbackFiles);
+        var settings = Load("[Font.default]\nFile = Primary.ttf\nFallbackFiles = Secondary.ttf, Third.ttf, Secondary.ttf\n");
+        Assert.Equal("Primary.ttf", settings.Profiles[0].File);
+        Assert.Equal(new[] { "Secondary.ttf", "Third.ttf" }, settings.Profiles[0].FallbackFiles);
+    }
+
+    [Fact]
+    public void CoverageChainRequiresAllRemainingCharacters()
+    {
+        uint[] requested = { 65, 0x1EF7, 0x1EF6 };
+        uint[] remaining = FontRules.RemainingCharacters(requested, false, new uint[] { 0x1EF7 });
+        Assert.Equal(new uint[] { 0x1EF7 }, remaining);
+        Assert.Equal(remaining, FontRules.RemainingCharacters(remaining, false, remaining));
+        Assert.Empty(FontRules.RemainingCharacters(remaining, true, new uint[0]));
+        Assert.Throws<InvalidOperationException>(() => FontRules.RemainingCharacters(requested, false, null));
+        Assert.Throws<InvalidOperationException>(() => FontRules.RemainingCharacters(requested, false, new uint[0]));
+        Assert.Throws<InvalidOperationException>(() => FontRules.RemainingCharacters(requested, false, new uint[] { 999 }));
+    }
+
     private static PluginSettings Load(string text)
     {
         string file = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".cfg");

@@ -52,6 +52,24 @@ namespace UnityVietnameseFontSync
             return Path.Combine(fontsDirectory, file);
         }
 
+        public static uint[] RemainingCharacters(uint[] requested, bool complete, uint[] missing)
+        {
+            if (complete) return new uint[0];
+            if (missing == null || missing.Length == 0)
+                throw new InvalidOperationException("Glyph population failed without a missing-character list; coverage cannot be verified.");
+            var remaining = new HashSet<uint>();
+            foreach (uint code in missing)
+            {
+                if (Array.IndexOf(requested, code) < 0)
+                    throw new InvalidOperationException("Glyph population returned an unexpected missing character.");
+                remaining.Add(code);
+            }
+            var result = new uint[remaining.Count];
+            remaining.CopyTo(result);
+            Array.Sort(result);
+            return result;
+        }
+
         public static uint[] Characters(string extra)
         {
             var text = new StringBuilder();
