@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Scaffolded with official BepInEx.Templates 2.0.0-be.4. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>UnityVietnameseFontSync</AssemblyName>
+    <RootNamespace>UnityVietnameseFontSync</RootNamespace>
+    <Product>Unity Vietnamese Font Sync</Product>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <BepInExPluginGuid>zeldrisho.UnityVietnameseFontSync</BepInExPluginGuid>
+    <Version>1.0.0</Version>
+    <LangVersion>latest</LangVersion>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
+    <PackageReference Include="BepInEx.Core" Version="5.4.21" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
+    <!-- Compile-only compatibility baseline, not a runtime Unity dependency. -->
+    <PackageReference Include="UnityEngine.Modules" Version="2022.3.0" IncludeAssets="compile" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
