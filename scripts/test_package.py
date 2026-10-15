@@ -3,6 +3,8 @@ import tempfile
 import unittest
 import zipfile
 
+from defusedxml.common import DTDForbidden
+
 from package import package, release_notes
 
 
@@ -15,6 +17,32 @@ class PackageTests(unittest.TestCase):
                      "## [1.0.0] - 2026-10-15\n"):
             with self.assertRaises(ValueError):
                 release_notes(text, "1.0.0")
+
+    def test_rejects_unsafe_xml_before_creating_output(self):
+        documents = {
+            "dtd": '<!DOCTYPE Project><Project />',
+            "internal_entities": (
+                '<!DOCTYPE Project [<!ENTITY text "expanded">'
+                '<!ENTITY repeated "&text;&text;">]>'
+                '<Project><Version>&repeated;</Version></Project>'
+            ),
+            "external_entity": (
+                '<!DOCTYPE Project [<!ENTITY external SYSTEM "file:///must-not-be-read">]>'
+                '<Project><Version>&external;</Version></Project>'
+            ),
+            "external_dtd": '<!DOCTYPE Project SYSTEM "https://example.invalid/project.dtd"><Project />',
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "src").mkdir()
+            project = root / "src/UnityVietnameseFontSync.csproj"
+            output = root / "out"
+            for name, document in documents.items():
+                with self.subTest(name=name):
+                    project.write_text(document, encoding="utf-8")
+                    with self.assertRaises(DTDForbidden):
+                        package(root, "v1.0.0", root / "unused.dll", output)
+                    self.assertFalse(output.exists())
 
     def test_exact_layout_version_and_reproducibility(self):
         """Verify archive contents, reproducibility, guide links, and rejection of invalid or mismatched tags."""

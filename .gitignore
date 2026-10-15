@@ -2,6 +2,7 @@
 **/obj/
 .vs/
 .idea/
+.venv/
 *.user
 *.suo
 Directory.Build.props

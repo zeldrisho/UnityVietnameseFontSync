@@ -31,6 +31,8 @@ jobs:
           name: plugin
           path: artifacts/plugin
 
+      - run: python3 -m pip install --require-hashes -r scripts/requirements.txt
+
       - name: Validate release metadata and package plugin
         env:
           RELEASE_TAG: ${{ github.ref_name }}

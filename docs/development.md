@@ -11,7 +11,15 @@
 
 ## Commands
 
-Run from the repository root:
+Run from the repository root. Create and activate a Python virtual environment, then install the hash-verified packaging dependency:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --require-hashes -r scripts/requirements.txt
+```
+
+Activate the environment again in new shells before running Python tests or packaging. On Windows, use `.venv\Scripts\Activate.ps1` in PowerShell instead of `source`.
 
 ```bash
 dotnet restore UnityVietnameseFontSync.slnx --locked-mode
@@ -61,7 +69,7 @@ A texture PNG alone is not a portable TMP font asset: glyph mappings, metrics, a
 
 ### Automated and in-game checks
 
-Unit tests exercise configuration, matching, paths, Unicode scalars, adapter capability checks, optional parameters, and failed glyph-preflight reporting. Packaging tests check version/tag validation, changelog requirements, the exact four-file layout, documentation links, and deterministic archive contents. These are not native rendering tests.
+Unit tests exercise configuration, matching, paths, Unicode scalars, adapter capability checks, optional parameters, and failed glyph-preflight reporting. Packaging tests check version/tag validation, changelog requirements, the exact four-file layout, documentation links, deterministic archive contents, and rejection of XML DTDs/entities before output is created. These are not native rendering tests.
 
 Optional local API-surface check (no game process or native font calls):
 
@@ -85,7 +93,7 @@ Before claiming runtime support, manually test:
 
 Workflows use minimal permissions, timeouts, concurrency controls, and action SHA pins with stable version comments. Review dependency updates manually and retain lock files. Review the Unity compatibility baseline rather than blindly accepting engine upgrades.
 
-CI restores in locked mode, checks formatting, builds, runs tests, checks packaging logic, and uploads only the plugin DLL. It does not need Steam or private reference assemblies.
+CI restores in locked mode, checks formatting, builds, runs tests, checks packaging logic, and uploads only the plugin DLL. Both CI and release packaging install the pinned, hash-verified dependency from `scripts/requirements.txt`. The packager uses `defusedxml` to reject DTDs, entities, and external references when reading project metadata; this build-time dependency is not included in the plugin archive. It does not need Steam or private reference assemblies.
 
 To release:
 

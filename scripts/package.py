@@ -6,8 +6,10 @@ import datetime
 import os
 from pathlib import Path
 import re
-import xml.etree.ElementTree as ET
 import zipfile
+
+from defusedxml import ElementTree as ET
+from defusedxml.common import DefusedXmlException
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = "UnityVietnameseFontSync"
@@ -34,7 +36,8 @@ def package(root, tag, dll, output, repository_url=None):
     if not re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag):
         raise ValueError("Use a stable SemVer tag such as v1.0.0.")
     version = tag[1:]
-    project = ET.parse(root / "src" / f"{PROJECT}.csproj")
+    project = ET.parse(root / "src" / f"{PROJECT}.csproj",
+                       forbid_dtd=True, forbid_entities=True, forbid_external=True)
     if project.findtext(".//Version") != version:
         raise ValueError("Release tag must match the project Version.")
     notes = release_notes((root / "CHANGELOG.md").read_text(encoding="utf-8"), version)
@@ -87,7 +90,7 @@ def main():
         server = os.environ.get("GITHUB_SERVER_URL", "https://github.com")
         repository_url = f"{server}/{repository}" if repository else None
         print(package(ROOT, args.tag, args.dll, args.output, repository_url))
-    except ValueError as error:
+    except (ValueError, DefusedXmlException) as error:
         parser.exit(1, f"{error}\n")
 
 
