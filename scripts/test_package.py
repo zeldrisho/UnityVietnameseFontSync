@@ -55,9 +55,14 @@ class PackageTests(unittest.TestCase):
                 "<BepInExPluginGuid>zeldrisho.UnityVietnameseFontSync</BepInExPluginGuid>"
                 "</PropertyGroup></Project>")
             (root / "CHANGELOG.md").write_text("## [1.0.0] - 2026-10-15\n### Added\n- Example.\n")
-            for name in ("README.md", "LICENSE", "docs/configuration.md", "docs/development.md"):
+            guides = ("configuration", "development", "release")
+            for name in ("LICENSE", *(f"docs/{guide}.md" for guide in guides)):
                 (root / name).write_text("example")
-            (root / "README.md").write_text("See [configuration](docs/configuration.md).")
+            # Exercise the shipped README, including every user-facing guide link.
+            readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")
+            for guide in guides:
+                self.assertIn(f"](docs/{guide}.md)", readme)
+            (root / "README.md").write_text(readme, encoding="utf-8")
             (root / "private.ttf").write_text("must not ship")
             dll = root / "UnityVietnameseFontSync.dll"
             dll.write_bytes(b"test fixture")
@@ -70,12 +75,21 @@ class PackageTests(unittest.TestCase):
                 self.assertEqual(set(bundle.namelist()), {
                     prefix + name for name in ("UnityVietnameseFontSync.dll", "README.md", "CHANGELOG.md", "LICENSE")
                 })
-                self.assertNotIn(b"docs/configuration.md", bundle.read(prefix + "README.md"))
+                bundled_readme = bundle.read(prefix + "README.md").decode("utf-8")
+                for guide in guides:
+                    self.assertNotIn(f"docs/{guide}.md", bundled_readme)
+                self.assertIn("configuration (see the project repository)", bundled_readme)
+                self.assertIn("development guide (see the project repository)", bundled_readme)
+                self.assertIn("release guide (see the project repository)", bundled_readme)
             self.assertEqual({file.name for file in first.parent.iterdir()}, {first.name, "notes.md"})
             hosted = package(root, "v1.0.0", dll, root / "hosted", "https://github.com/example/project")
             with zipfile.ZipFile(hosted) as bundle:
-                self.assertIn(b"https://github.com/example/project/blob/v1.0.0/docs/configuration.md",
-                              bundle.read(prefix + "README.md"))
+                bundled_readme = bundle.read(prefix + "README.md").decode("utf-8")
+                for guide in guides:
+                    self.assertIn(
+                        f"](https://github.com/example/project/blob/v1.0.0/docs/{guide}.md)",
+                        bundled_readme)
+                    self.assertNotIn(f"](docs/{guide}.md)", bundled_readme)
             for tag in ("v1.0.1", "v1.0.0-beta", "../../evil", "v01.0.0"):
                 with self.assertRaises(ValueError):
                     package(root, tag, dll, root / "bad")

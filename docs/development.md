@@ -1,5 +1,7 @@
 # Development
 
+For CI, packaging, and publication instructions, see the [release guide](release.md).
+
 ## Toolchain and layout
 
 - Stable .NET 10 SDK, Git, and Python 3 for release packaging/tests.
@@ -31,9 +33,9 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 
 To apply formatting, omit `--verify-no-changes`. Output: `src/bin/Release/netstandard2.1/UnityVietnameseFontSync.dll`. Deploy only that DLL, manually, to the game's plugin directory. Build/test commands never deploy.
 
-The project originated from official [BepInEx.Templates](https://github.com/BepInEx/BepInEx.Templates). Stable 1.4.0 generation failed under SDK 10.0.112; documented template 2.0.0-be.4 worked. That scaffolding exception does not require a bleeding-edge runtime. Restore/build does not require templates to remain installed.
+Dependencies use exact versions plus lock files. UnityEngine.Modules 2022.3.0 is an intentional compile-only compatibility baseline, not a required game version; blindly selecting the newest Unity package could introduce newer runtime API dependencies. No Unity/TMP/game DLL ships with the plugin.
 
-Dependencies use exact versions plus lock files. BepInEx packages use the latest stable versions available in the configured feed when checked. UnityEngine.Modules 2022.3.0 is an intentional compile-only compatibility baseline, not a required game version; blindly selecting the newest Unity package could introduce newer runtime API dependencies. No Unity/TMP/game DLL ships with the plugin. `Version`, display name, and GUID live in `src/UnityVietnameseFontSync.csproj`; template tooling generates constants for the plugin attribute. The initial stable version is `1.0.0`, matching the .NET SDK default and using three-part SemVer. The SDK derives the assembly/file versions (`1.0.0.0` initially); no separate version constants are maintained.
+Edit `Version`, display name, and GUID in `src/UnityVietnameseFontSync.csproj`, not the generated plugin constants. Use three-part SemVer; the SDK derives assembly/file versions. Restore/build does not require BepInEx templates to be installed.
 
 ## Runtime design
 
@@ -67,6 +69,10 @@ The working starting point was C# run inside UnityExplorer, not an installed ver
 
 A texture PNG alone is not a portable TMP font asset: glyph mappings, metrics, and other font data are also required. Runtime-generated fonts are not exported by this plugin. Restarting clears manual in-memory changes; disable startup scripts before testing the plugin independently.
 
+### Plugin log evidence
+
+A local Unity Mono plugin run logged successful preflight for two profiles, including secondary-file coverage for a character missing from the primary file, followed by successful Synchronize application to four matching game font assets. Discovery continued beyond startup. This confirms profile creation and rule application for that run, not visual correctness, broad runtime compatibility, or performance. Keep local game mappings, paths, and font files out of committed examples and runtime configuration.
+
 ### Automated and in-game checks
 
 Unit tests exercise configuration, matching, paths, Unicode scalars, adapter capability checks, optional parameters, and failed glyph-preflight reporting. Packaging tests check version/tag validation, changelog requirements, the exact four-file layout, documentation links, deterministic archive contents, and rejection of XML DTDs/entities before output is created. These are not native rendering tests.
@@ -88,35 +94,3 @@ Before claiming runtime support, manually test:
 - Startup, scenes, async loads, inactive text activation, retries, and long-session atlas growth.
 - XUnity coexistence with its competing TMP font settings empty.
 - Discovery/refresh timings and memory in multiple games. No rendering/performance claims are verified yet.
-
-## CI and release
-
-Workflows use minimal permissions, timeouts, concurrency controls, and action SHA pins with stable version comments. Review dependency updates manually and retain lock files. Review the Unity compatibility baseline rather than blindly accepting engine upgrades.
-
-CI restores in locked mode, checks formatting, builds, runs tests, checks packaging logic, and uploads only the plugin DLL. Both CI and release packaging install the pinned, hash-verified dependency from `scripts/requirements.txt`. The packager uses `defusedxml` to reject DTDs, entities, and external references when reading project metadata; this build-time dependency is not included in the plugin archive. It does not need Steam or private reference assemblies.
-
-To release:
-
-1. Finish manual validation and review the MIT license and any third-party redistribution rights.
-2. Set the project `Version`; move relevant user-facing `Unreleased` changes to `## [X.Y.Z] - YYYY-MM-DD` in `CHANGELOG.md` and retain `Unreleased` above it. Keep developer instructions, CI changes, and test implementation details out of the changelog.
-3. Validate packaging locally, commit, and push a matching stable `vX.Y.Z` tag only when ready to publish.
-4. The release workflow reruns CI, validates tag/version/changelog consistency, creates the allowlisted ZIP, and publishes a normal GitHub release automatically. **Tagging is the publication trigger; there is no draft/manual-publish step.**
-
-Local packaging after adding the dated release entry:
-
-```bash
-python3 scripts/package.py --tag vX.Y.Z --dll src/bin/Release/netstandard2.1/UnityVietnameseFontSync.dll
-```
-
-The initial archive is `UnityVietnameseFontSync-1.0.0.zip`; future archives retain the `UnityVietnameseFontSync-X.Y.Z.zip` pattern. It contains exactly:
-
-```text
-plugins/zeldrisho.UnityVietnameseFontSync/UnityVietnameseFontSync.dll
-plugins/zeldrisho.UnityVietnameseFontSync/README.md
-plugins/zeldrisho.UnityVietnameseFontSync/CHANGELOG.md
-plugins/zeldrisho.UnityVietnameseFontSync/LICENSE
-```
-
-Extract into `<Game>/BepInEx/`, not the game root. The install directory is derived from the project GUID; the DLL name remains the assembly name. Guides stay in the repository. During GitHub packaging, README guide links point to that repository's release tag; local packages without GitHub metadata use plain-text documentation references instead of broken local links.
-
-The ZIP is the only attached release asset. The generated `notes.md` becomes the GitHub release body, not an archive entry. Separate checksum files are optional and omitted for this small distribution. No fonts, game/BepInEx/Unity DLLs, generated config, debug symbols, or internal planning notes are included. Users supply fonts and generate per-game configuration on first launch. Comparison links can be added once the repository remote and first release exist.

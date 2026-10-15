@@ -15,6 +15,8 @@ File: `BepInEx/config/zeldrisho.UnityVietnameseFontSync.cfg`. Edit while the gam
 | Rules | Order | empty | Comma-separated rule IDs in first-match order |
 | Rules | Exclude | empty | Case-insensitive asset-name fragments excluded before all rules |
 
+Enable `Diagnostics` during setup or troubleshooting to discover asset names, then set it to `false` and restart after verifying the relevant screens. This only disables discovered-font-name logging; scanning, font changes, normal status messages, warnings, and errors remain enabled. There is no separate plugin debug setting; leave BepInEx logging available for troubleshooting.
+
 IDs contain letters, digits, underscores, or hyphens. Lists trim whitespace and remove exact duplicates. IDs/profile references are case-sensitive; asset matching is case-insensitive. Unlisted sections are inactive.
 
 The preset covers printable ASCII and uppercase/lowercase precomposed Vietnamese. Add curly quotes, ellipsis, combining marks, or other required characters explicitly. Game text is not normalized or rewritten. Invalid surrogate sequences are rejected.
@@ -34,9 +36,20 @@ Relative paths search `<plugin DLL directory>/Fonts/` first, then the OS Fonts d
 
 Profiles must successfully add the entire preset plus custom characters across `File` and `FallbackFiles` combined. Each fallback file is preloaded with only the characters still missing from earlier files. Later files are not loaded once coverage is complete. All generated files use the profile's atlas settings; the primary asset links to the generated fallback assets in order. No links back to game fonts are added.
 
-Example: `File = PrimaryFont.ttf` with `FallbackFiles = CoverageFont.ttf` keeps the primary style wherever available and uses the second font for missing characters. A character supplied by another font may look different. This does not guarantee combining-mark shaping.
+For a profile needing secondary-file coverage:
 
-If coverage remains incomplete, a needed file is missing, or TMP cannot report which characters failed, the entire profile is disabled and mapped game fonts are left alone. Missing Unicode values are logged where TMP supplies them. Files are loaded once at startup; restart to retry after fixing a file.
+```ini
+[Fonts]
+Profiles = menu
+
+[Font.menu]
+File = PrimaryFont.ttf
+FallbackFiles = CoverageFont.ttf
+```
+
+Put both licensed files in the plugin's `Fonts/` directory, or use valid absolute paths. This keeps the primary style wherever available and uses the second font for missing characters. A character supplied by another font may look different. Leave `FallbackFiles` empty when the primary file covers the whole preset. This does not guarantee combining-mark shaping; matching rules are still required to apply the profile.
+
+If coverage remains incomplete, a needed file is missing, or TMP cannot report which characters failed, the entire profile is disabled and mapped game fonts are left alone. Missing Unicode values are logged where TMP supplies them. Files are loaded once when TMP becomes available; restart to retry after fixing a file.
 
 ## Rules: `[Rule.<ID>]`
 

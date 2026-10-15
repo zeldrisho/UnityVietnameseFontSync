@@ -2,7 +2,7 @@
 
 A configurable **BepInEx 5 plugin for Unity Mono games using TextMeshPro**. Add missing Vietnamese glyphs or use a consistent replacement font for selected font groups.
 
-This plugin does not translate text. It can work alongside XUnity.AutoTranslator or an existing Vietnamese translation.
+This plugin does not translate text. It can work alongside [XUnity.AutoTranslator](https://github.com/bbepis/XUnity.AutoTranslator) or an existing Vietnamese translation.
 
 ## Compatibility
 
@@ -24,7 +24,7 @@ This plugin does not translate text. It can work alongside XUnity.AutoTranslator
 ## Installation
 
 1. Install [BepInEx 5 for Unity Mono](https://docs.bepinex.dev/articles/user_guide/installation/index.html).
-2. Extract the release archive into `<Game>/BepInEx/`. The plugin DLL should be at:
+2. Download the ZIP from the [latest release](https://github.com/zeldrisho/UnityVietnameseFontSync/releases/latest) and extract it into `<Game>/BepInEx/`. The plugin DLL should be at:
    ```text
    <Game>/BepInEx/plugins/zeldrisho.UnityVietnameseFontSync/UnityVietnameseFontSync.dll
    ```
@@ -32,36 +32,36 @@ This plugin does not translate text. It can work alongside XUnity.AutoTranslator
    ```text
    <Game>/BepInEx/config/zeldrisho.UnityVietnameseFontSync.cfg
    ```
-4. Close the game, configure a font file and matching rules, then start it again.
-
-There is no need for a separate BepInEx-only run before installing this plugin. If you previously used a UnityExplorer font script, restart with that script disabled and do not run it alongside the plugin.
+4. Close the game and follow the setup steps below to discover font names and configure a matching rule.
 
 The initial configuration makes **no font changes**. No game assemblies or proprietary font files are bundled.
 
-## Worked configuration example
+## Configure and verify
 
-The generated config starts with no matching rules, so it makes no font changes. Close the game before editing the file, then restart it. Enable diagnostics to find the TMP font asset name in `BepInEx/LogOutput.log`; match the asset name, not the text component name.
+### 1. Discover the font asset name
 
-This complete example synchronizes one fictional asset named `MainMenu SDF`, using a primary font plus a secondary font for missing characters. Replace the filenames and exact asset name with values available in your installation. Put both licensed font files in the plugin's `Fonts/` directory. **Synchronize replaces the matched font's characters in memory**; do not broaden the match to icon or unrelated fonts.
+With the game closed, set `Diagnostics = true` under `[General]` in the generated config. Leave `Rules.Order` empty while discovering names. Start the game, visit the menus or screens you want to change, then inspect `Discovered TMP font:` entries in `BepInEx/LogOutput.log`. Match the TMP font asset name, not the text component name.
+
+### 2. Add an exact Fallback rule
+
+Close the game before editing. Create this directory and put a licensed Vietnamese-capable font file in it; fonts are not included in the release:
+
+```text
+<Game>/BepInEx/plugins/zeldrisho.UnityVietnameseFontSync/Fonts/
+```
+
+Use the following example, replacing `MyVietnameseFont.ttf` and the fictional asset name `MainMenu SDF` with your filename and discovered name. Other settings can retain their generated defaults.
 
 ```ini
 [General]
 Enabled = true
 Diagnostics = true
-ScanInterval = 2
-RetryInterval = 30
 
 [Fonts]
 Profiles = menu
-CustomCharacters =
 
 [Font.menu]
 File = MyVietnameseFont.ttf
-FallbackFiles = CoverageFont.ttf
-SamplingSize = 36
-Padding = 4
-AtlasSize = 2048
-MultiAtlas = true
 
 [Rules]
 Order = menu-text
@@ -71,16 +71,20 @@ Exclude = Icons, Symbols
 Profile = menu
 Match = Exact
 Pattern = MainMenu SDF
-Mode = Synchronize
+Mode = Fallback
 ```
 
-`FallbackFiles` supplies characters missing from the primary file, while keeping its style for available characters. Coverage must be complete across the ordered files; otherwise the profile is disabled. Leave this setting empty when the primary font covers the whole preset.
+Fallback retains original glyphs and adds missing-character coverage. To replace incorrect existing glyphs or make accented and unaccented letters use the same replacement style, change only `Mode = Fallback` to `Mode = Synchronize`.
 
-Keep `Synchronize` when replacing incorrect existing glyphs or making accented and unaccented letters use the same replacement style. Use `Mode = Fallback` instead if you only need missing-character coverage: it retains the original glyphs and cannot replace incorrect ones. Both modes preserve existing fallback chains and leave unmatched fonts unchanged. Restart without the plugin to restore the game's original assets.
+**Synchronize clears the matched font's whole character table in memory.** Use narrow rules and check symbols, untranslated text, and layout. Both modes preserve existing fallback chains and leave unmatched fonts unchanged. Matching outlines, shadows, spacing, and line breaks is not guaranteed. Restart without the plugin to restore the game's original assets.
 
-See [configuration](docs/configuration.md) for multiple profiles, matching modes, exclusions, and atlas settings.
+### 3. Verify and turn off diagnostics
 
-**Synchronization clears the matched font's character table in memory.** Use narrow rules and check symbols, untranslated text, and layout. Restart to recover. Matching outlines, shadows, spacing, and line breaks is not guaranteed.
+Restart the game. Check the log for a loaded profile and an `Applied` rule, then visually check the relevant screens. Successful log messages do not guarantee correct rendering or layout.
+
+Once verified, close the game, set `Diagnostics = false`, and restart. This stops discovered-font-name logging, not scanning or font changes. Normal status messages, warnings, and errors remain useful; there is no separate plugin debug setting, and you do not need to disable BepInEx logging globally. Re-enable diagnostics when troubleshooting or discovering more fonts.
+
+See [configuration](docs/configuration.md) for secondary font files, multiple profiles, matching modes, exclusions, and atlas settings.
 
 ## With XUnity.AutoTranslator
 
@@ -112,6 +116,10 @@ Keep translation enabled. This plugin neither edits XUnity configuration nor rew
 
 To disable, set `Enabled = false` and restart. To uninstall, close the game and remove the plugin DLL.
 
+## Development
+
+See the [development guide](docs/development.md) for setup, build/test commands, runtime design, and validation limits, and the [release guide](docs/release.md) for packaging and publication.
+
 ## License
 
-[MIT](LICENSE). The license covers this plugin and its documentation, not third-party fonts or game assemblies. Do not redistribute proprietary system fonts or game assets.
+[MIT](LICENSE).
