@@ -31,7 +31,8 @@
 |---|---|
 | User setup | `README.md` |
 | Configuration contract | `docs/configuration.md` |
-| Runtime design, build, testing, release | `docs/development.md` |
+| Runtime design, build, testing | `docs/development.md` |
+| Release process and packaging | `docs/release.md` |
 | Change history | `CHANGELOG.md` |
 | CI | `.github/workflows/ci.yml` |
 | Published releases | `.github/workflows/release.yml` |
