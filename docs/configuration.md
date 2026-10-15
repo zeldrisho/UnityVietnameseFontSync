@@ -15,7 +15,7 @@ File: `BepInEx/config/zeldrisho.UnityVietnameseFontSync.cfg`. Edit while the gam
 | Rules | Order | empty | Comma-separated rule IDs in first-match order |
 | Rules | Exclude | empty | Case-insensitive asset-name fragments excluded before all rules |
 
-Enable `Diagnostics` during setup or troubleshooting to discover asset names, then set it to `false` and restart after verifying the relevant screens. This only disables discovered-font-name logging; scanning, font changes, normal status messages, warnings, and errors remain enabled. There is no separate plugin debug setting; leave BepInEx logging available for troubleshooting.
+Enable `Diagnostics` during setup or troubleshooting to discover asset names, then set it to `false` and restart after verifying the relevant screens. This stops discovered-font-name logging. With at least one ready profile, scanning and font changes continue; otherwise, game-font enumeration is skipped while diagnostics are off. Normal status messages, warnings, and errors remain enabled. There is no separate plugin debug setting; leave BepInEx logging available for troubleshooting.
 
 IDs contain letters, digits, underscores, or hyphens. Lists trim whitespace and remove exact duplicates. IDs/profile references are case-sensitive; asset matching is case-insensitive. Unlisted sections are inactive.
 

@@ -82,7 +82,7 @@ Fallback retains original glyphs and adds missing-character coverage. To replace
 
 Restart the game. Check the log for a loaded profile and an `Applied` rule, then visually check the relevant screens. Successful log messages do not guarantee correct rendering or layout.
 
-Once verified, close the game, set `Diagnostics = false`, and restart. This stops discovered-font-name logging, not scanning or font changes. Normal status messages, warnings, and errors remain useful; there is no separate plugin debug setting, and you do not need to disable BepInEx logging globally. Re-enable diagnostics when troubleshooting or discovering more fonts.
+Once verified, close the game, set `Diagnostics = false`, and restart. This stops discovered-font-name logging. With at least one ready profile, scanning and font changes continue; otherwise, game-font enumeration is skipped while diagnostics are off. Normal status messages, warnings, and errors remain enabled; there is no separate plugin debug setting, and you do not need to disable BepInEx logging globally. Re-enable diagnostics when troubleshooting or discovering more fonts.
 
 See [configuration](docs/configuration.md) for secondary font files, multiple profiles, matching modes, exclusions, and atlas settings.
 
